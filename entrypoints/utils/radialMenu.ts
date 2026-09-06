@@ -1,4 +1,4 @@
-import { createApp, h, ref, type App } from 'vue';
+import { createApp, h, onBeforeUnmount, ref, type App } from 'vue';
 import RadialMenu from '@/components/RadialMenu.vue';
 import { config } from '@/entrypoints/utils/config';
 import { isServiceConfigured, options, supportsTranslationOnlyMode } from '@/entrypoints/utils/option';
@@ -45,6 +45,11 @@ export function mountRadialMenu() {
       window.addEventListener('resize', sync, { passive: true });
       window.addEventListener('scroll', sync, { passive: true });
       document.addEventListener('mousemove', sync, { passive: true });
+      onBeforeUnmount(() => {
+        window.removeEventListener('resize', sync);
+        window.removeEventListener('scroll', sync);
+        document.removeEventListener('mousemove', sync);
+      });
       return () => h(RadialMenu, {
         open: open.value,
         'onUpdate:open': (value: boolean) => { open.value = value; },
