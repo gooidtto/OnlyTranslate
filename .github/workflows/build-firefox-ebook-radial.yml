@@ -1,0 +1,42 @@
+name: Build Firefox ebook radial test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-firefox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.1
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Compile
+        run: pnpm compile
+
+      - name: Build Firefox package
+        run: pnpm zip:firefox
+
+      - name: Upload Firefox test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: OnlyTranslate-firefox-ebook-radial-test
+          path: .output/*.zip
+          if-no-files-found: error
+          retention-days: 14
