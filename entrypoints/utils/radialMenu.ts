@@ -6,7 +6,6 @@ import browser from 'webextension-polyfill';
 
 let app: App<Element> | null = null;
 let host: HTMLDivElement | null = null;
-let raf = 0;
 
 const position = ref<'left' | 'right'>('right');
 const offsetY = ref<number | null>(null);
@@ -27,12 +26,10 @@ function availableServices() {
 
 function syncAnchor() {
   const ball = document.querySelector<HTMLElement>('#only-translate-floating-ball-container .floating-ball-trigger');
-  if (ball) {
-    const rect = ball.getBoundingClientRect();
-    position.value = config.floatingBallPosition === 'left' ? 'left' : 'right';
-    offsetY.value = Math.max(8, rect.top);
-  }
-  raf = requestAnimationFrame(syncAnchor);
+  if (!ball) return;
+  const rect = ball.getBoundingClientRect();
+  position.value = config.floatingBallPosition === 'left' ? 'left' : 'right';
+  offsetY.value = Math.max(8, rect.top);
 }
 
 export function mountRadialMenu() {
@@ -44,6 +41,10 @@ export function mountRadialMenu() {
 
   app = createApp({
     setup() {
+      const sync = () => syncAnchor();
+      window.addEventListener('resize', sync, { passive: true });
+      window.addEventListener('scroll', sync, { passive: true });
+      document.addEventListener('mousemove', sync, { passive: true });
       return () => h(RadialMenu, {
         open: open.value,
         'onUpdate:open': (value: boolean) => { open.value = value; },
@@ -62,17 +63,15 @@ export function mountRadialMenu() {
     }
   });
   app.mount(host);
+  syncAnchor();
 
   const style = document.createElement('style');
   style.id = 'only-translate-radial-menu-bridge-style';
   style.textContent = '#only-translate-floating-ball-container .floating-toolbar,#only-translate-floating-ball-container .floating-ball-more-trigger{display:none!important;}';
   document.documentElement.appendChild(style);
-  syncAnchor();
 }
 
 export function unmountRadialMenu() {
-  if (raf) cancelAnimationFrame(raf);
-  raf = 0;
   if (app) app.unmount();
   app = null;
   host?.remove();
