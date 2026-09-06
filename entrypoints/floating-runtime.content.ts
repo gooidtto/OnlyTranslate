@@ -1,5 +1,6 @@
 import { config, configReady } from '@/entrypoints/utils/config'
 import { configureFloatingBallTranslationActions, mountFloatingBall, setFloatingBallTranslationState, unmountFloatingBall } from '@/entrypoints/utils/floatingBall'
+import { mountRadialMenu, unmountRadialMenu } from '@/entrypoints/utils/radialMenu'
 import { createContentFeatureRequester } from '@/entrypoints/content/contentFeatureRequester'
 import type { ContentFeatureActionMessage } from '@/entrypoints/utils/contentFeatureProtocol'
 
@@ -20,12 +21,21 @@ export default defineContentScript({
       restoreOriginalContent: () => { void request('page', { type: 'restore' }) }
     })
 
+    const mount = () => {
+      mountFloatingBall()
+      if (config.disableFloatingBall !== true) mountRadialMenu()
+    }
+    const unmount = () => {
+      unmountRadialMenu()
+      unmountFloatingBall()
+    }
+
     const listener = (message: unknown) => {
       const envelope = message as Partial<ContentFeatureActionMessage>
       if (envelope.type !== 'CONTENT_FEATURE_ACTION' || envelope.feature !== 'floating') return
       const action = envelope.action as FloatingAction
-      if (action?.type === 'mount') mountFloatingBall()
-      if (action?.type === 'unmount') unmountFloatingBall()
+      if (action?.type === 'mount') mount()
+      if (action?.type === 'unmount') unmount()
       if (action?.type === 'set-state') setFloatingBallTranslationState(Boolean(action.translated))
       return { success: true }
     }
@@ -35,9 +45,9 @@ export default defineContentScript({
 
     browser.runtime.onMessage.addListener(listener)
     document.addEventListener('onlytranslate-page-state-changed', pageStateHandler)
-    if (config.disableFloatingBall !== true) mountFloatingBall()
+    if (config.disableFloatingBall !== true) mount()
     window.addEventListener('beforeunload', () => {
-      unmountFloatingBall()
+      unmount()
       browser.runtime.onMessage.removeListener(listener)
       document.removeEventListener('onlytranslate-page-state-changed', pageStateHandler)
       runtimeWindow.__onlyTranslateFloatingRuntime = false
