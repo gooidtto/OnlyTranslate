@@ -26,10 +26,12 @@ function availableServices() {
 
 function syncAnchor() {
   const ball = document.querySelector<HTMLElement>('#only-translate-floating-ball-container .floating-ball-trigger');
-  if (!ball) return;
+  if (!ball || !host) return;
   const rect = ball.getBoundingClientRect();
   position.value = config.floatingBallPosition === 'left' ? 'left' : 'right';
   offsetY.value = Math.max(8, rect.top);
+  const root = host.querySelector<HTMLElement>('.radial-host');
+  if (root) root.classList.toggle('radial-host--right', position.value === 'right');
 }
 
 export function mountRadialMenu() {
@@ -72,7 +74,7 @@ export function mountRadialMenu() {
 
   const style = document.createElement('style');
   style.id = 'only-translate-radial-menu-bridge-style';
-  style.textContent = '#only-translate-floating-ball-container .floating-toolbar,#only-translate-floating-ball-container .floating-ball-more-trigger{display:none!important;}';
+  style.textContent = '#only-translate-floating-ball-container .floating-toolbar,#only-translate-floating-ball-container .floating-ball-more-trigger{display:none!important;}#only-translate-radial-menu-container .radial-host--right{right:67px!important;left:auto!important;}';
   document.documentElement.appendChild(style);
 }
 
