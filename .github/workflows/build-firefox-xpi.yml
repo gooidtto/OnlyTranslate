@@ -1,0 +1,37 @@
+name: Build Firefox XPI
+
+on:
+  push:
+    branches:
+      - feat/radial-menu-vue3-single-root
+  workflow_dispatch:
+
+jobs:
+  build-firefox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Compile
+        run: pnpm compile
+      - name: Build Firefox
+        run: pnpm build:firefox
+      - name: Package Firefox XPI
+        run: pnpm zip:firefox
+      - name: Upload XPI
+        uses: actions/upload-artifact@v4
+        with:
+          name: onlytranslate-firefox-xpi
+          path: .output/*firefox*.zip
+          if-no-files-found: error
