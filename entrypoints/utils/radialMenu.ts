@@ -6,10 +6,17 @@ import browser from 'webextension-polyfill';
 
 let app: App<Element> | null = null;
 let host: HTMLDivElement | null = null;
+let legacyObserver: MutationObserver | null = null;
 
 const position = ref<'left' | 'right'>('right');
 const offsetY = ref<number | null>(null);
 const open = ref(false);
+
+const LEGACY_RADIAL_PREFIX = 'booknote-radial-ring-host';
+
+function purgeLegacyRadialHosts() {
+  document.querySelectorAll<HTMLElement>(`[id^="${LEGACY_RADIAL_PREFIX}"]`).forEach(node => node.remove());
+}
 
 function availableServices() {
   const result: Array<{ value: string; label: string }> = [];
@@ -36,6 +43,10 @@ function syncAnchor() {
 
 export function mountRadialMenu() {
   if (app || !document.documentElement) return;
+
+  purgeLegacyRadialHosts();
+  legacyObserver = new MutationObserver(purgeLegacyRadialHosts);
+  legacyObserver.observe(document.documentElement, { childList: true, subtree: true });
 
   host = document.createElement('div');
   host.id = 'only-translate-radial-menu-container';
@@ -79,6 +90,8 @@ export function mountRadialMenu() {
 }
 
 export function unmountRadialMenu() {
+  legacyObserver?.disconnect();
+  legacyObserver = null;
   if (app) app.unmount();
   app = null;
   host?.remove();
